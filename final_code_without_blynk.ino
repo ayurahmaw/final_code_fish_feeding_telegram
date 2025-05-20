@@ -8,25 +8,27 @@
 #include <UniversalTelegramBot.h>
 #include <WiFiClientSecure.h>
 
-#define USE_DEBUG_PRINT   0
-#define USE_TELEGRAM_BOT  1
+// debug
+#define USE_DEBUG_PRINT         0
+#define USE_TELEGRAM_BOT        1
 
-#define SERVO_OPEN_DURATION_MS  250
-#define SERVO_OPEN_DEGREE       35
-#define SERVO_CLOSE_DEGREE      0
+// servo
+#define SERVO_OPEN_DURATION_MS    250
+#define SERVO_OPEN_DEGREE         35
+#define SERVO_CLOSE_DEGREE        0
 
 // Ultrasonic & LCD Setup
-#define TRIG_PIN          D6
-#define ECHO_PIN          D7
-#define MIN_HEIGHT_CM   30
-#define MAX_HEIGHT_CM    3
-#define MAX_PERCENTAGE    100
-#define MIN_PRECENTAGE    0
-#define PERCENTAGE_TRESH  20
+#define TRIG_PIN                  D6
+#define ECHO_PIN                  D7
+#define MIN_HEIGHT_CM             30
+#define MAX_HEIGHT_CM             3
+#define MAX_PERCENTAGE            100
+#define MIN_PRECENTAGE            0
+#define PERCENTAGE_TRESH          20
 
 // Telegram Bot Setup
-#define BOT_TOKEN         "7942156151:AAHXZ1jBfbuHC75lD7oqDzk-z9ebTdYnzWo"
-#define CHAT_ID           "1705069823"
+#define BOT_TOKEN                 "7942156151:AAHXZ1jBfbuHC75lD7oqDzk-z9ebTdYnzWo"
+#define CHAT_ID                   "1705069823"
 
 // wifi setup
 #define WIFI_SSID                 "gendhis"
@@ -35,15 +37,16 @@
 #define WIFI_CONNECT_INTERVAL_MS  500
 
 // lcd setup
-#define LCD_I2C_ADDR      0x27
-#define LCD_COL           16
-#define LCD_ROW           2
+#define LCD_I2C_ADDR              0x27
+#define LCD_COL                   16
+#define LCD_ROW                   2
 
 // serial monitor setup
-#define SERIAL_BAUD       115200
+#define SERIAL_BAUD               115200
 
-#define GMT_7_TIME_OFFSET       25200
-#define NTP_UPDATE_INTERVAL_MS  60000
+// NTP
+#define GMT_7_TIME_OFFSET         25200
+#define NTP_UPDATE_INTERVAL_MS    60000
 
 typedef enum time_id_e {
   TIME_ID_HOUR,
@@ -52,12 +55,22 @@ typedef enum time_id_e {
   TIME_ID_SIZE,
 } time_id_t;
 
+/**
+BEGIN FUNCTION PROTOTYPES
+*/
 bool send_to_bot(String message);
 wl_status_t connect_to_wifi(int timeout);
 String update_time(bool ntp_status);
 float calculate_fodder_height(void);
 long calculate_fodder_percentage(float height);
+/**
+END FUNCTION PROTOTYPES
+*/
 
+/**
+BEGIN GLOBAL VARIABLES
+*/
+Servo myServo;
 unsigned long lastTriggerMillis = 0;
 bool servoAtZero = false, is_servo_was_opened = false;
 
@@ -69,20 +82,21 @@ String time_source;
 float fodder_height = 0;
 long fodder_percentage = 0;
 
-// Servo & Time Setup
-Servo myServo;
-
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", GMT_7_TIME_OFFSET, NTP_UPDATE_INTERVAL_MS);
 
 RTC_DS3231 rtc;
-
 LiquidCrystal_I2C lcd(LCD_I2C_ADDR, LCD_COL, LCD_ROW);  // I2C LCD
 
-// telegram bot setup
 WiFiClientSecure secured_client;
 UniversalTelegramBot bot(BOT_TOKEN, secured_client);
+/**
+END GLOBAL VARIABLES
+*/
 
+/**
+BEGIN USER CODE 1
+*/
 bool send_to_bot(String message) {
   yield();
   if (WiFi.status() != WL_CONNECTED) return false;
@@ -131,6 +145,10 @@ void adjust_rtc(void) {
   }
 }
 
+/**
+END USER CODE 1
+*/
+
 void setup() {
   Serial.begin(SERIAL_BAUD);
   Wire.begin();
@@ -166,7 +184,6 @@ void setup() {
   }
   timeClient.begin();
 
-  // Ultrasonic & LCD Setup
   pinMode(TRIG_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
 
@@ -192,7 +209,6 @@ void loop() {
   Serial.printf("Current Time: %02d:%02d:%02d WIB (%s)\n", current_time[TIME_ID_HOUR], current_time[TIME_ID_MIN], current_time[TIME_ID_SEC], time_source.c_str());
 #endif
 
-  // bool is_on_feed_schedule = (current_time[TIME_ID_SEC] % 20 == 0);
   bool is_on_feed_schedule = (current_time[TIME_ID_HOUR] == 7) || (current_time[TIME_ID_HOUR] == 17) || (current_time[TIME_ID_HOUR] == 22);
 
   if (is_on_feed_schedule && !servoAtZero && !is_servo_was_opened) {
@@ -250,6 +266,10 @@ void loop() {
   delay(float(SERVO_OPEN_DURATION_MS)/2);
 }
 
+
+/**
+BEGIN USER CODE 2
+*/
 float calculate_fodder_height(void) {
   digitalWrite(TRIG_PIN, LOW);
   delayMicroseconds(2);
@@ -280,3 +300,7 @@ long calculate_fodder_percentage(float height) {
 
   return percentage;
 }
+
+/**
+END USER CODE 2
+*/
